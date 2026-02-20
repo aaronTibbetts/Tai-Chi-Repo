@@ -1,0 +1,52 @@
+{
+  "placeholderImages": [
+    {
+      "id": "sequence-beginner",
+      "description": "A gentle introduction to Tai Chi.",
+      "imageUrl": "https://picsum.photos/seed/sequence-beginner/600/400",
+      "imageHint": "calm water"
+    },
+    {
+      "id": "sequence-intermediate",
+      "description": "Building on the fundamentals with more complex forms.",
+      "imageUrl": "https://picsum.photos/seed/sequence-intermediate/600/400",
+      "imageHint": "mountain path"
+    },
+    {
+      "id": "sequence-advanced",
+      "description": "Mastering the flow and energy of advanced Tai Chi.",
+      "imageUrl": "https://picsum.photos/seed/sequence-advanced/600/400",
+      "imageHint": "serene sunrise"
+    },
+    {
+      "id": "pose-opening-form",
+      "description": "Stand with feet shoulder-width apart, knees slightly bent, and arms hanging loosely at your sides. Slowly raise your arms to shoulder height, palms down, then gently lower them.",
+      "imageUrl": "https://picsum.photos/seed/pose-opening-form/600/800",
+      "imageHint": "still person"
+    },
+    {
+      "id": "pose-grasp-sparrows-tail",
+      "description": "A fundamental movement involving warding off, rolling back, pressing, and pushing.",
+      "imageUrl": "https://picsum.photos/seed/pose-grasp-sparrows-tail/600/800",
+      "imageHint": "gentle bird"
+    },
+    {
+      "id": "pose-single-whip",
+      "description": "A graceful, expansive posture that opens the body.",
+      "imageUrl": "https://picsum.photos/seed/pose-single-whip/600/800",
+      "imageHint": "willow tree"
+    },
+    {
+      "id": "pose-white-crane",
+      "description": "A posture that cultivates balance and lightness, mimicking a crane spreading its wings.",
+      "imageUrl": "https://picsum.photos/seed/pose-white-crane/600/800",
+      "imageHint": "white crane"
+    },
+    {
+      "id": "pose-brush-knee",
+      "description": "A coordinated movement of hand and foot, involving stepping and blocking.",
+      "imageUrl": "https://picsum.photos/seed/pose-brush-knee/600/800",
+      "imageHint": "flowing stream"
+    }
+  ]
+}
