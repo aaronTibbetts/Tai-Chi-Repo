@@ -1,22 +1,72 @@
-1. Install nvm : curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-   then restart your terminal.
-2.Install and use Node 20
-  nvm install 20
-  nvm use 20
-  nvm alias default 20
-  node --version  # Should show v20.x.x
-3. clone this repo
-4. Install dependenices: npm install
-5. touch .env
-   add following to the file
- GEMINI_API_KEY=your_gemini_api_key_here
-ELEVEN_API_KEY=your_elevenlabs_api_key_here
-ELEVEN_VOICE_ID=your_voice_id_here
-ELEVEN_OUTPUT_FORMAT=wav_24000
-USE_ELEVEN_TTS=true
-ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
-ELEVENLABS_VOICE_ID=your_voice_id_here
+# Virtual Exercise Coach
 
-(dont commit the .env file)
-6. run dev server: npm run dev
-open: http://localhost:9002/ in browser
+Next.js frontend + Flask backend for Tai Chi pose analysis, AI feedback, and image generation.
+
+## Requirements
+
+- Node.js 20+
+- Python 3.11+ (tested with 3.13)
+
+## Install
+
+1. Install frontend dependencies:
+   `npm install`
+2. Install backend dependencies:
+   `pip install -r backend/requirements.txt`
+3. Create root `.env` (for Next server actions) from `.env.example`.
+4. Create `backend/.env` from `backend/.env.example`.
+
+## Environment Variables
+
+### Root `.env` (Next.js)
+
+- `FLASK_API_BASE_URL=http://127.0.0.1:5001`
+
+### `backend/.env` (Flask)
+
+- `FLASK_API_HOST=127.0.0.1`
+- `FLASK_API_PORT=5001`
+- `FLASK_API_DEBUG=true`
+- `VEC_API_BASE_URL=https://vec-api-9cvw.onrender.com`
+- `GEMINI_API_KEY=...`
+- `GEMINI_TEXT_MODEL=gemini-2.5-flash`
+- `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image`
+- `ELEVENLABS_API_KEY=...`
+- `ELEVENLABS_VOICE_ID=...`
+
+## Run
+
+Start Flask backend:
+
+```bash
+npm run backend:dev
+```
+
+Start Next frontend:
+
+```bash
+npm run dev
+```
+
+App URLs:
+
+- Frontend: `http://localhost:9002`
+- Backend health: `http://127.0.0.1:5001/api/v1/health`
+
+## Backend API
+
+- `GET /api/v1/health`
+- `GET /api/v1/ai/ping`
+- `POST /api/v1/analysis/predict-csv`
+- `POST /api/v1/feedback/details`
+- `POST /api/v1/feedback/personalized`
+- `POST /api/v1/feedback/summary`
+- `POST /api/v1/media/generate-image`
+
+## Tests
+
+Run backend tests:
+
+```bash
+npm run backend:test
+```
