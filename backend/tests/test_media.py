@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.errors import ApiError
+from errors import ApiError
 
 
 def test_generate_image_success(client, app, monkeypatch):

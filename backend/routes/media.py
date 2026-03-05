@@ -3,8 +3,8 @@ from __future__ import annotations
 from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
 
-from backend.errors import ApiError
-from backend.models import ImageRequest
+from errors import ApiError
+from models import ImageRequest
 
 bp = Blueprint("media", __name__, url_prefix="/api/v1/media")
 

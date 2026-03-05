@@ -8,15 +8,15 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
-from backend.errors import register_error_handlers
-from backend.routes.analysis import bp as analysis_bp
-from backend.routes.feedback import bp as feedback_bp
-from backend.routes.health import bp as health_bp
-from backend.routes.media import bp as media_bp
-from backend.services.elevenlabs_service import ElevenLabsService
-from backend.services.gemini_service import GeminiService
-from backend.services.gesture_mapper import GestureMapper
-from backend.services.vec_proxy import VecApiProxy
+from errors import register_error_handlers
+from routes.analysis import bp as analysis_bp
+from routes.feedback import bp as feedback_bp
+from routes.health import bp as health_bp
+from routes.media import bp as media_bp
+from services.elevenlabs_service import ElevenLabsService
+from services.gemini_service import GeminiService
+from services.gesture_mapper import GestureMapper
+from services.vec_proxy import VecApiProxy
 
 
 def _configure_logging() -> None:
