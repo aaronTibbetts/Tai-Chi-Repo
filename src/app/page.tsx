@@ -7,8 +7,10 @@ import { sequences } from '@/lib/sequences';
 import { SequenceCard } from '@/components/SequenceCard';
 import { isCalibrated, onCalibrationUpdated } from '@/lib/calibration';
 import { Button } from '@/components/ui/button';
+import SignUpForm from '@/components/SignUpForm';
 
 export default function HomePage() {
+  const isAuthenticated = false;
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
@@ -16,8 +18,16 @@ export default function HomePage() {
     return onCalibrationUpdated(c => setOk(!!c));
   }, []);
 
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen p-6 flex items-center justify-center">
+        <SignUpForm />
+      </main>
+    );
+  }
+
   return (
-    <main className="container mx-auto p-6 space-y-6">
+    <main className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Virtual Exercise Coach</h1>
         <CalibrationStatus />
