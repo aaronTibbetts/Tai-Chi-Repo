@@ -1,0 +1,10 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api-test/page": "app/api-test/page.js",
+  "/calibrate/page": "app/calibrate/page.js",
+  "/csv-test/page": "app/csv-test/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/image-test/page": "app/image-test/page.js",
+  "/page": "app/page.js",
+  "/signup/page": "app/signup/page.js"
+}

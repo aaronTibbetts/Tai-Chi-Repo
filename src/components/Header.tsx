@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Moon, Sun, TestTube2, Image as ImageIcon, ClipboardList, Server } from 'lucide-react';
+import { Moon, Sun, TestTube2, Image as ImageIcon, ClipboardList, Server, UserPlus } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
@@ -42,15 +42,24 @@ export function Header() {
                 <Server className="h-5 w-5" />
               </Button>
             </Link>
+            <Link href="/signup">
+              <Button variant="ghost" size="icon" aria-label="Sign up">
+                <UserPlus className="h-5 w-5" />
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="icon"
+              className="relative"
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
+              {/* Moon while light = “go dark”; Sun while dark = “go light” */}
+              <Moon className="absolute inset-0 m-auto h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Sun className="absolute inset-0 m-auto h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">
+                {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              </span>
             </Button>
           </nav>
         </div>
