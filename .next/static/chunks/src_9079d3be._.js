@@ -1208,6 +1208,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$Sequenc
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$calibration$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/calibration.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SignUpForm$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/SignUpForm.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$auth$2f$AuthProvider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/auth/AuthProvider.tsx [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
@@ -1219,9 +1220,10 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+;
 function HomePage() {
     _s();
-    const isAuthenticated = false;
+    const { isAuthenticated } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$auth$2f$AuthProvider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"])();
     const [ok, setOk] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "HomePage.useEffect": ()=>{
@@ -1231,23 +1233,122 @@ function HomePage() {
             }["HomePage.useEffect"]);
         }
     }["HomePage.useEffect"], []);
-    if ("TURBOPACK compile-time truthy", 1) {
+    if (!isAuthenticated) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
             className: "min-h-screen p-6 flex items-center justify-center",
             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SignUpForm$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                 fileName: "[project]/src/app/page.tsx",
-                lineNumber: 24,
+                lineNumber: 26,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/page.tsx",
-            lineNumber: 23,
+            lineNumber: 25,
             columnNumber: 7
         }, this);
     }
-    "TURBOPACK unreachable";
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
+        className: "container mx-auto p-6 space-y-8",
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex items-center justify-between",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                        className: "text-2xl font-semibold",
+                        children: "Virtual Exercise Coach"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 34,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$CalibrationStatus$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 35,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/page.tsx",
+                lineNumber: 33,
+                columnNumber: 7
+            }, this),
+            !ok ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "rounded-lg border p-8 text-center",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        className: "mb-2 text-xl font-medium",
+                        children: "Let’s calibrate first"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 40,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "mb-4 text-muted-foreground",
+                        children: "Please complete a quick T-pose calibration so we can adapt training to your body & camera."
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 41,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                        asChild: true,
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                            href: "/calibrate",
+                            children: "Go to Calibration"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/page.tsx",
+                            lineNumber: 45,
+                            columnNumber: 13
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 44,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/page.tsx",
+                lineNumber: 39,
+                columnNumber: 9
+            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        className: "text-lg font-medium",
+                        children: "Training Sequences"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 50,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "grid gap-6 sm:grid-cols-2 lg:grid-cols-3",
+                        children: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sequences$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["sequences"].map((seq)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SequenceCard$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SequenceCard"], {
+                                sequence: seq
+                            }, seq.id, false, {
+                                fileName: "[project]/src/app/page.tsx",
+                                lineNumber: 53,
+                                columnNumber: 15
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/page.tsx",
+                        lineNumber: 51,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true)
+        ]
+    }, void 0, true, {
+        fileName: "[project]/src/app/page.tsx",
+        lineNumber: 32,
+        columnNumber: 5
+    }, this);
 }
-_s(HomePage, "+nCNmiRFC7lgB8Ww/3m5TVXwpiQ=");
+_s(HomePage, "ocTxIJF/mgYxNGUJwA30wnaILrU=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$auth$2f$AuthProvider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"]
+    ];
+});
 _c = HomePage;
 var _c;
 __turbopack_context__.k.register(_c, "HomePage");

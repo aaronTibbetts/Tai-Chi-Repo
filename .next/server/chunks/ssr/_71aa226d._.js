@@ -74,15 +74,60 @@ const metadata = {
 };
 function SignUpPage() {
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-        className: "flex min-h-[calc(100vh-4rem)] items-center justify-center p-6",
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SignUpForm$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
-            fileName: "[project]/src/app/signup/page.tsx",
-            lineNumber: 12,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
+        className: "relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-6",
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SignUpForm$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
+                fileName: "[project]/src/app/signup/page.tsx",
+                lineNumber: 13,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end p-4 pb-6 sm:p-6 sm:pb-8",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(Button, {
+                    variant: "secondary",
+                    size: "sm",
+                    className: "pointer-events-auto border border-border/80 bg-background/95 shadow-md backdrop-blur-sm",
+                    asChild: true,
+                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(Link, {
+                        href: "/login",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "text-muted-foreground",
+                                children: "Already have an account?"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/signup/page.tsx",
+                                lineNumber: 22,
+                                columnNumber: 13
+                            }, this),
+                            ' ',
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "font-semibold text-primary",
+                                children: "Log in"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/signup/page.tsx",
+                                lineNumber: 23,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/signup/page.tsx",
+                        lineNumber: 21,
+                        columnNumber: 11
+                    }, this)
+                }, void 0, false, {
+                    fileName: "[project]/src/app/signup/page.tsx",
+                    lineNumber: 15,
+                    columnNumber: 9
+                }, this)
+            }, void 0, false, {
+                fileName: "[project]/src/app/signup/page.tsx",
+                lineNumber: 14,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
         fileName: "[project]/src/app/signup/page.tsx",
-        lineNumber: 11,
+        lineNumber: 12,
         columnNumber: 5
     }, this);
 }

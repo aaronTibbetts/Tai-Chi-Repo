@@ -8,9 +8,11 @@ import { SequenceCard } from '@/components/SequenceCard';
 import { isCalibrated, onCalibrationUpdated } from '@/lib/calibration';
 import { Button } from '@/components/ui/button';
 import SignUpForm from '@/components/SignUpForm';
+import { SignUpFooterLogin } from '@/components/SignUpFooterLogin';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function HomePage() {
-  const isAuthenticated = false;
+  const { isAuthenticated } = useAuth();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
@@ -20,8 +22,9 @@ export default function HomePage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen p-6 flex items-center justify-center">
+      <main className="relative flex min-h-screen items-center justify-center p-6">
         <SignUpForm />
+        <SignUpFooterLogin />
       </main>
     );
   }
