@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/guapo/Documents/Capstone%20-%20Tai%20Chi/Tai-Chi-Repo/src/app/dashboard/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next';\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'Dashboard | Virtual Exercise Coach',\r\n  description: 'Your practice overview and weekly plan.',\r\n};\r\n\r\nexport default function DashboardLayout({ children }: { children: React.ReactNode }) {\r\n  return children;\r\n}\r\n"],"names":[],"mappings":";;;;AAEO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;AACf;AAEe,SAAS,gBAAgB,EAAE,QAAQ,EAAiC;IACjF,OAAO;AACT","debugId":null}}]
+}
