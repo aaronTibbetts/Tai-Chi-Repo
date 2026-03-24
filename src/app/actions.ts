@@ -1,23 +1,63 @@
-
 'use server';
 
-import { personalizedTaiChiFeedback, type PersonalizedTaiChiFeedbackOutput, type PersonalizedTaiChiFeedbackInput } from '@/ai/flows/personalized-tai-chi-feedback';
-import { generateImage, type GenerateImageOutput, type GenerateImageInput } from '@/ai/flows/generate-image';
-import { summarizeFeedback, type SummarizeFeedbackInput, type SummarizeFeedbackOutput } from '@/ai/flows/summarize-feedback-flow';
-import { sequences } from '@/lib/sequences';
-import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-import { getFeedbackDetails, type FeedbackDetails } from '@/lib/gesture-errors';
+import type { FeedbackDetails } from '@/lib/gesture-errors';
 
-// This is the new, more descriptive type for the final result.
-export type AiFeedbackResult = {
+const BACKEND_BASE_URL =
+  process.env.FLASK_API_BASE_URL?.trim() || 'http://127.0.0.1:5001';
+
+const DEFAULT_TIMEOUT_MS = 60_000;
+const ANALYSIS_TIMEOUT_MS = 120_000;
+
+type BackendErrorPayload = {
+  error?: string;
+  code?: string;
+  details?: unknown;
+};
+
+type BackendFeedbackResponse = {
+  feedbacks: Feedback[];
+};
+
+type BackendFeedbackDetailsResponse = {
+  gestureName: string;
+  errorDescriptions: string[];
+};
+
+type BackendPersonalizedResponse = {
   aiFeedback: PersonalizedTaiChiFeedbackOutput;
   translationDetails: {
     gestureName: string;
     errorDescriptions: string[];
   };
-} | { error: string };
+};
 
+type BackendSummaryResponse = SummarizeFeedbackOutput;
+type BackendImageResponse = GenerateImageOutput;
+type BackendPingResponse = { message: string };
+
+export type PersonalizedTaiChiFeedbackOutput = {
+  speech: string;
+  explanation: string;
+};
+
+export type SummarizeFeedbackOutput = {
+  summarySpeech: string;
+  summaryText: string;
+};
+
+export type GenerateImageOutput = {
+  imageUrl: string;
+};
+
+export type AiFeedbackResult =
+  | {
+      aiFeedback: PersonalizedTaiChiFeedbackOutput;
+      translationDetails: {
+        gestureName: string;
+        errorDescriptions: string[];
+      };
+    }
+  | { error: string };
 
 export type Feedback = {
   poseName: string;
@@ -26,48 +66,113 @@ export type Feedback = {
 };
 
 export type AnalysisResult = { feedbacks: Feedback[] } | { error: string };
+export type GenerateImageResult = GenerateImageOutput | { error: string };
 
+function buildBackendUrl(path: string): string {
+  const base = BACKEND_BASE_URL.endsWith('/')
+    ? BACKEND_BASE_URL.slice(0, -1)
+    : BACKEND_BASE_URL;
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${suffix}`;
+}
+
+function formatBackendError(status: number, payload: BackendErrorPayload): string {
+  const errorMessage = payload.error?.trim() || `Request failed with status ${status}.`;
+  const details =
+    typeof payload.details === 'string'
+      ? payload.details.trim()
+      : payload.details
+        ? JSON.stringify(payload.details)
+        : '';
+  return details ? `${errorMessage} Details: ${details}` : errorMessage;
+}
+
+async function callBackend<T>(
+  path: string,
+  init: RequestInit,
+  timeoutMs = DEFAULT_TIMEOUT_MS
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(buildBackendUrl(path), {
+      ...init,
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+
+    const text = await response.text();
+    let payload: any = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = {};
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(formatBackendError(response.status, payload));
+    }
+
+    return payload as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export async function getPoseAnalysisFromCsv(csvData: string): Promise<AnalysisResult> {
   try {
     if (!csvData) {
       return { error: 'CSV data is empty.' };
     }
-    
-    const formData = new FormData();
-    const csvBlob = new Blob([csvData], { type: 'text/csv' });
-    formData.append('file', csvBlob, 'pose_data.csv');
 
-    const response = await fetch('https://vec-api-9cvw.onrender.com/predict-csv', {
-      method: 'POST',
-      body: formData,
-    });
+    const result = await callBackend<BackendFeedbackResponse>(
+      '/api/v1/analysis/predict-csv',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csvData }),
+      },
+      ANALYSIS_TIMEOUT_MS
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result && result.feedbacks) {
+    if (result && Array.isArray(result.feedbacks)) {
       return { feedbacks: result.feedbacks };
-    } else {
-      return { error: "Analysis successful, but feedback data is missing from the response." };
     }
 
+    return { error: 'Analysis successful, but feedback data is missing from the response.' };
   } catch (error) {
-    console.error("Error getting pose analysis:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error('Error getting pose analysis:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { error: `Failed to get analysis. Details: ${errorMessage}` };
   }
 }
 
-export async function getFeedbackDetailsAction(poseName: string, speechText: string): Promise<FeedbackDetails> {
-    return getFeedbackDetails(poseName, speechText);
+export async function getFeedbackDetailsAction(
+  poseName: string,
+  speechText: string
+): Promise<FeedbackDetails> {
+  const result = await callBackend<BackendFeedbackDetailsResponse>(
+    '/api/v1/feedback/details',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ poseName, speechText }),
+    }
+  );
+  return {
+    gestureName: result.gestureName,
+    errorDescriptions: result.errorDescriptions,
+  };
 }
 
-// Updated action to handle pose mismatches and regular feedback
 export async function getAiFeedbackForAnalysis(
   expectedPoseName: string,
   analysisFeedback: Feedback,
@@ -78,80 +183,74 @@ export async function getAiFeedbackForAnalysis(
       return { error: 'No analysis feedback provided.' };
     }
 
-    const { poseName: actualPoseName, speechText } = analysisFeedback;
+    const result = await callBackend<BackendPersonalizedResponse>(
+      '/api/v1/feedback/personalized',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          expectedPoseName,
+          analysisFeedback,
+          previousFeedback,
+        }),
+      }
+    );
 
-    // Translate IDs to human-readable text for the detected pose
-    const { gestureName, errorDescriptions } = getFeedbackDetails(actualPoseName, speechText);
-    
-    // The input for the AI flow now includes both expected and actual poses
-    const input: PersonalizedTaiChiFeedbackInput = {
-      expectedPoseName,
-      actualPoseName: gestureName, // Use the human-readable name
-      errorDescriptions,
-      previousExplanation: previousFeedback
-    };
-
-    const aiResult = await personalizedTaiChiFeedback(input);
-    
     return {
-      aiFeedback: aiResult,
-      translationDetails: {
-        gestureName, // This is the *actual* gesture performed
-        errorDescriptions,
-      },
+      aiFeedback: result.aiFeedback,
+      translationDetails: result.translationDetails,
     };
-
   } catch (error) {
-    console.error("Error getting AI feedback:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error('Error getting AI feedback:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { error: `Failed to get feedback from AI coach. Details: ${errorMessage}` };
   }
 }
 
-
-export async function getFinalSummaryAction(feedbackItems: string[]): Promise<SummarizeFeedbackOutput | { error: string }> {
+export async function getFinalSummaryAction(
+  feedbackItems: string[]
+): Promise<SummarizeFeedbackOutput | { error: string }> {
   try {
-    const input: SummarizeFeedbackInput = { feedbackItems };
-    const result = await summarizeFeedback(input);
+    const result = await callBackend<BackendSummaryResponse>('/api/v1/feedback/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feedbackItems }),
+    });
     return result;
   } catch (error) {
-    console.error("Error getting final summary:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error('Error getting final summary:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { error: `Failed to get final summary from AI coach. Details: ${errorMessage}` };
   }
 }
 
-
 export async function testGemini(): Promise<string> {
   try {
-    console.log("Attempting to call Gemini...");
-    const result = await ai.generate({
-      model: googleAI.model('gemini-2.0-flash'),
-      prompt: "Hello Gemini, this is a test. If you see this, please respond with 'Connection successful.'",
+    const result = await callBackend<BackendPingResponse>('/api/v1/ai/ping', {
+      method: 'GET',
     });
-    console.log("Gemini response received:", result.text);
-    return result.text;
-  } catch (e) {
-    const error = e as Error;
-    console.error("Error calling Gemini:", error);
-    return `Error: ${error.message || 'An unknown error occurred.'}`;
+    return result.message || 'Connection successful.';
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return `Error: ${message}`;
   }
 }
 
-export type GenerateImageResult = GenerateImageOutput | { error: string };
-
 export async function generateImageAction(prompt: string): Promise<GenerateImageResult> {
-    if (!prompt) {
-        return { error: 'Prompt cannot be empty.' };
-    }
+  if (!prompt) {
+    return { error: 'Prompt cannot be empty.' };
+  }
 
-    try {
-        const input: GenerateImageInput = { prompt };
-        const result = await generateImage(input);
-        return result;
-    } catch (error) {
-        console.error("Error generating image:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        return { error: `Failed to generate image. Details: ${errorMessage}` };
-    }
+  try {
+    const result = await callBackend<BackendImageResponse>('/api/v1/media/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    return result;
+  } catch (error) {
+    console.error('Error generating image:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { error: `Failed to generate image. Details: ${errorMessage}` };
+  }
 }
