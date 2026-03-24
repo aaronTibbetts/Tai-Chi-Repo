@@ -189,7 +189,10 @@ export default function ApiTestPage() {
         toast({ title: 'Analysis Complete', description: 'Now getting feedback from AI Coach...'});
 
         // Step 3: Get the final AI feedback
-        const aiResult: AiFeedbackResult = await getAiFeedbackForAnalysis(analysisResult.feedbacks);
+        const aiResult: AiFeedbackResult = await getAiFeedbackForAnalysis(
+          firstFeedback.poseName,
+          firstFeedback
+        );
         
         if ('error' in aiResult) {
             toast({ variant: 'destructive', title: 'AI Coach Failed', description: aiResult.error });
