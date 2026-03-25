@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from '@/components/Header';
 
@@ -31,11 +32,13 @@ export default function RootLayout({
         )}
       >
         <ThemeProvider>
+          <AuthProvider>
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <main className="flex-1">{children}</main>
             </div>
             <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
