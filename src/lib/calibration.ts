@@ -18,11 +18,13 @@ export type CalibrationOptions = {
 const KEY = 'calibration.v1';
 
 export function getCalibration(): CalibrationData | null {
+  if (typeof window === 'undefined') return null;
   try { return JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch { return null; }
 }
 export function isCalibrated(): boolean { return !!getCalibration(); }
 
 export function onCalibrationUpdated(cb: (c: CalibrationData | null) => void) {
+  if (typeof window === 'undefined') return () => {};
   const handler = (e: Event) => {
     // @ts-ignore
     const data = e.detail ?? getCalibration();
@@ -31,7 +33,6 @@ export function onCalibrationUpdated(cb: (c: CalibrationData | null) => void) {
   window.addEventListener('calibration:updated', handler);
   return () => window.removeEventListener('calibration:updated', handler);
 }
-
 function saveCalibration(c: CalibrationData) {
   sessionStorage.setItem(KEY, JSON.stringify(c));
   window.dispatchEvent(new CustomEvent('calibration:updated', { detail: c }));
@@ -71,6 +72,12 @@ function angleDegToHorizontal(v:V3){
   const horiz = { x:v.x, y:0, z:v.z };
   const lh = len(horiz) || 1;
   return deg(Math.acos(Math.min(1, Math.max(-1, dot(v, horiz)/(len(v)*lh)))));
+}
+
+function angleDegToVertical(v:V3){
+  const L = len(v);
+  if(L < 1e-6) return 0;
+  return deg(Math.atan2(Math.abs(v.x), Math.abs(v.y)));
 }
 
 function tPoseJointStatus(world: V3[], tolDeg: number) {
@@ -161,12 +168,43 @@ function isTPose(world: V3[], tolDeg: number){
   return (a1<=tolDeg && a2<=tolDeg && a3<=tolDeg && a4<=tolDeg);
 }
 
+function isWujiPose(world: V3[], tolDeg: number){
+  const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
+  const LEL = world[idx.L_EL], REL = world[idx.R_EL]; //elbows
+  const LWR = world[idx.L_WR], RWR = world[idx.R_WR]; //wrists
+  const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP]; //hips
+  const LKN = world[idx.L_KNEE], RKN = world[idx.R_KNEE]; //knees
+  const LANK = world[idx.L_ANK], RANK = world[idx.R_ANK]; //ankles
+
+  if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR||!LHP||!RHP||!LKN||!RKN||!LANK||!RANK) return false;
+
+  const a1 = angleDegToVertical(sub(LEL, LSH));  // left upper arm
+  const a2 = angleDegToVertical(sub(LWR, LEL));  // left forearm
+  const a3 = angleDegToVertical(sub(REL, RSH));  // right upper arm
+  const a4 = angleDegToVertical(sub(RWR, REL));  // right forearm
+  const a5 = angleDegToVertical(sub(LSH, LHP));  // left torso
+  const a6 = angleDegToVertical(sub(RSH, RHP));  // right torso
+  const a7 = angleDegToVertical(sub(LKN, LHP));  // left thigh
+  const a8 = angleDegToVertical(sub(RKN, RHP));  // right thigh
+  const a9 = angleDegToVertical(sub(LANK, LKN)); // left shin
+  const a10 = angleDegToVertical(sub(RANK, RKN)); // right shin
+
+  const armTol   = tolDeg;        // 15° — arms 
+  const torsoTol = tolDeg + 20;   // 35° — torso
+  const legTol   = tolDeg + 30;   // 45° — legs
+
+  return (a1<=tolDeg && a2<=tolDeg && a3<=tolDeg && a4<=tolDeg
+       && a5<=tolDeg && a6<=tolDeg && a7<=tolDeg && a8<=tolDeg
+       && a9<=tolDeg && a10<=tolDeg);
+}
+
 // --- main entry: run calibration on a live <video>/<canvas> ---
 export async function startCalibration(
   videoEl: HTMLVideoElement,
   canvasEl: HTMLCanvasElement,
   containerEl?: HTMLElement | null,
-  opts: CalibrationOptions = {}
+  opts: CalibrationOptions = {},
+  poseType : 'tpose' | 'wuji' = 'tpose'
 ): Promise<CalibrationData> {
   const lm = await ensureLandmarker(opts);
   const durationSec = opts.durationSec ?? 3;
@@ -220,6 +258,31 @@ export async function startCalibration(
       return { L_EL: okLU, L_WR: okLF, R_EL: okRU, R_WR: okRF };
     };
 
+    const wujiJointStatus = (world: V3[]) => {
+      const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
+      const LEL = world[idx.L_EL], REL = world[idx.R_EL]; // elbows
+      const LWR = world[idx.L_WR], RWR = world[idx.R_WR]; //wrists
+      const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP]; //hips
+      const LKN = world[idx.L_KNEE], RKN = world[idx.R_KNEE]; //knees
+      const LANK = world[idx.L_ANK], RANK = world[idx.R_ANK]; //ankles
+
+      if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR||!LHP||!RHP||!LKN||!RKN||!LANK||!RANK){
+        return {L_SH: false, R_SH: false, L_EL: false, R_EL:false, L_WR:false, R_WR:false, L_KN: false, R_KN:false, L_AN:false, R_AN:false};
+      }
+      return{
+        L_EL: angleDegToVertical(sub(LEL, LSH)) <= tolDeg,
+        R_EL: angleDegToVertical(sub(REL, RSH)) <= tolDeg,
+        L_WR: angleDegToVertical(sub(LWR,LEL)) <= tolDeg,
+        R_WR: angleDegToVertical(sub(RWR,REL)) <= tolDeg,
+        L_SH: angleDegToVertical(sub(LSH,LHP)) <= tolDeg + 20,
+        R_SH: angleDegToVertical(sub(RSH, RHP)) <= tolDeg +20,
+        L_KN: angleDegToVertical(sub(LKN,LHP)) <= tolDeg + 30,
+        R_KN: angleDegToVertical(sub(RKN, RHP)) <= tolDeg +30,
+        L_AN: angleDegToVertical(sub(LANK, LKN)) <= tolDeg +30,
+        R_AN: angleDegToVertical(sub(RANK, RKN)) <= tolDeg + 30,
+      }
+    }
+
   const step = async (): Promise<CalibrationData> => {
     sizeCanvasToContainer();
 
@@ -260,15 +323,39 @@ export async function startCalibration(
         ctx.stroke();
       };
 
-      // elbows + wrists
-      drawDot(I.L_EL, ok.L_EL);
-      drawDot(I.L_WR, ok.L_WR);
-      drawDot(I.R_EL, ok.R_EL);
-      drawDot(I.R_WR, ok.R_WR);
+      if(poseType === 'tpose'){
+        const ok = jointStatus(world);
+        // elbows + wrists
+        drawDot(I.L_EL, ok.L_EL);
+        drawDot(I.L_WR, ok.L_WR);
+        drawDot(I.R_EL, ok.R_EL);
+        drawDot(I.R_WR, ok.R_WR);
+      } else if(poseType === 'wuji'){
+        const ok = wujiJointStatus(world);
+        drawDot(idx.L_EL, ok.L_EL);
+        drawDot(idx.L_WR, ok.L_WR);
+        drawDot(idx.R_EL, ok.R_EL);
+        drawDot(idx.R_WR, ok.R_WR);
+        drawDot(idx.L_SH, ok.L_SH);
+        drawDot(idx.R_SH, ok.R_SH);
+        drawDot(idx.L_KNEE, ok.L_KN);
+        drawDot(idx.R_KNEE, ok.R_KN);
+        drawDot(idx.L_ANK, ok.L_AN);
+        drawDot(idx.R_ANK, ok.R_AN);
+      }
+      
     }
 
     // 3) Countdown gate (keep your existing isTPose if you prefer)
-    if (world && isTPose(world, tolDeg)) stableMs += 33; else stableMs = 0;
+    let poseCheck : boolean = false; 
+
+    if(world && world.length > 0){
+      poseCheck = poseType === 'wuji' ? isWujiPose(world, tolDeg) : isTPose(world, tolDeg);
+      console.log('poseCheck:', poseCheck, 'stableMs:', stableMs);
+      console.log('posetype:' ,poseType);
+    }
+    
+    if (poseCheck) stableMs += 33; else stableMs = 0;
 
     const remainingS = Math.max(0, Math.ceil(durationSec - stableMs / 1000));
     if (remainingS !== lastTickS) { lastTickS = remainingS; opts.onTick?.(remainingS); }
