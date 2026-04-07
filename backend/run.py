@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
-from app import create_app
+if __package__ in {None, ""}:
+    repo_root = Path(__file__).resolve().parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from backend.app import create_app
+else:
+    from .app import create_app
 
 app = create_app()
 

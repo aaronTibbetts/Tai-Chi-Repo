@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 
-from errors import ApiError
+from backend.errors import ApiError
 
 
 def test_predict_csv_accepts_json(client, app, monkeypatch):

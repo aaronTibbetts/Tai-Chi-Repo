@@ -5,7 +5,7 @@ import time
 
 import requests
 
-from errors import ApiError
+from ..errors import ApiError
 
 
 class VecApiProxy:

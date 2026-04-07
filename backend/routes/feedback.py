@@ -3,13 +3,13 @@ from __future__ import annotations
 from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
 
-from errors import ApiError
-from models import (
+from ..errors import ApiError
+from ..models import (
     FeedbackDetailsRequest,
     PersonalizedFeedbackRequest,
     SummaryRequest,
 )
-from services.gesture_mapper import normalize_pose_name
+from ..services.gesture_mapper import normalize_pose_name
 
 bp = Blueprint("feedback", __name__, url_prefix="/api/v1/feedback")
 
