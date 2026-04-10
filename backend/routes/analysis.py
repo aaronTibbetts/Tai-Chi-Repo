@@ -3,8 +3,8 @@ from __future__ import annotations
 from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
 
-from errors import ApiError
-from models import CsvJsonRequest
+from ..errors import ApiError
+from ..models import CsvJsonRequest
 
 bp = Blueprint("analysis", __name__, url_prefix="/api/v1/analysis")
 

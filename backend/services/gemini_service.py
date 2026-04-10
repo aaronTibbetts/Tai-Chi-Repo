@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from errors import ApiError
+from ..errors import ApiError
 
 
 class GeminiService:
@@ -15,6 +15,7 @@ class GeminiService:
 
     def __init__(self) -> None:
         self.api_key = os.getenv("GEMINI_API_KEY", "")
+        print(self.api_key)
         self.text_model = os.getenv("GEMINI_TEXT_MODEL", "gemini-2.5-flash")
         self.image_model = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
         self.timeout_seconds = float(os.getenv("GEMINI_TIMEOUT_SECONDS", "45"))
@@ -173,6 +174,7 @@ class GeminiService:
         return parsed
 
     def _request_generate_content(self, model: str, payload: dict[str, Any]) -> dict[str, Any]:
+        print("Request_generate_content ", self.api_key)
         if not self.api_key:
             raise ApiError(
                 message="GEMINI_API_KEY is not configured.",
