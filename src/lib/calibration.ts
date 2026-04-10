@@ -1,6 +1,6 @@
 'use client';
 
-import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
+import { PoseLandmarker, FilesetResolver, DrawingUtils, HandLandmarker } from '@mediapipe/tasks-vision';
 
 export type CalibrationData = {
   proportions: Record<string, number>;
@@ -13,7 +13,30 @@ export type CalibrationOptions = {
   modelUrlBase?: string;          // mediapipe wasm base
   modelAssetPath?: string;        // pose task file
   onTick?: (sRemaining: number) => void; // optional UI callback
+  onStateChange?: (state:string)=> void;
 };
+
+// pose state can have 1 or more states 
+type PoseState = {
+  name: string;
+  check : (world: V3[], tolDeg: number) => boolean;
+};
+
+const POSE_SEQUENCES: Record<string, PoseState[]> = {
+  tpose: [
+    {name: 'tpose', check: isTPose}
+  ],
+  wuji:[
+    {name: 'wuji', check: isWujiPose}
+  ],
+  lotus: [
+    {name: 'openLotus', check: isLotusOpenPose},
+    {name: 'closedLotus', check: isLotusClosePose},
+  ],
+  tree:[
+    {name: 'tree', check: isTreePose}
+  ] 
+}
 
 const KEY = 'calibration.v1';
 
@@ -58,10 +81,27 @@ async function ensureLandmarker(opts?: Partial<CalibrationOptions>) {
   return landmarkerPromise;
 }
 
+let handLandmarkerPromise: Promise<HandLandmarker> | null = null; 
+async function ensureHandLandmarker(opts?: Partial<CalibrationOptions>){
+  if(!handLandmarkerPromise){
+    const base = opts?.modelUrlBase ?? 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
+    const model = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+    handLandmarkerPromise = (async() => {
+      const vision = await FilesetResolver.forVisionTasks(base);
+      return await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {modelAssetPath: model, delegate: 'GPU'},
+        runningMode: 'VIDEO',
+        numHands: 2,
+      });
+    })();
+  }
+  return handLandmarkerPromise; 
+}
+
 // --- math helpers ---
 type V3 = { x:number; y:number; z:number };
 const idx = { NOSE:0, L_SH:11, R_SH:12, L_EL:13, R_EL:14, L_WR:15, R_WR:16, L_HIP:23, R_HIP:24, L_KNEE:25, R_KNEE:26, L_ANK:27, R_ANK:28 };
-
+const handIdx = {THUMB_CMC: 1, THUMB_MCP: 2, THUMB_IP: 3, THUMB_TIP: 4, PINKY_MCP: 17, PINKY_PIP:18, PINKY_DIP:19, PINKY_TIP: 20}
 function sub(a:V3,b:V3):V3{ return {x:a.x-b.x,y:a.y-b.y,z:a.z-b.z}; }
 function len(v:V3){ return Math.hypot(v.x,v.y,v.z); }
 function dot(a:V3,b:V3){ return a.x*b.x + a.y*b.y + a.z*b.z; }
@@ -189,13 +229,98 @@ function isWujiPose(world: V3[], tolDeg: number){
   const a9 = angleDegToVertical(sub(LANK, LKN)); // left shin
   const a10 = angleDegToVertical(sub(RANK, RKN)); // right shin
 
-  const armTol   = tolDeg;        // 15° — arms 
-  const torsoTol = tolDeg + 20;   // 35° — torso
-  const legTol   = tolDeg + 30;   // 45° — legs
-
   return (a1<=tolDeg && a2<=tolDeg && a3<=tolDeg && a4<=tolDeg
        && a5<=tolDeg && a6<=tolDeg && a7<=tolDeg && a8<=tolDeg
        && a9<=tolDeg && a10<=tolDeg);
+}
+
+function isLotusClosePose(world: V3[], tolDeg: number){
+  const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
+  const LEL = world[idx.L_EL], REL = world[idx.R_EL]; //elbows
+  const LWR = world[idx.L_WR], RWR = world[idx.R_WR]; //wrists 
+  const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP];
+
+  if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR) return false;
+
+  const shoulderLength = len(sub(RSH,LSH));
+  const wristLength = len(sub(LWR,RWR));
+
+  const handsTogether = wristLength < shoulderLength * 0.8;
+
+  const shoulderMid = (LSH.y + RSH.y) /2;
+  const hipMid = (LHP.y + RHP.y)/2;
+  const torsoLength = Math.abs(hipMid - shoulderMid);
+
+  const wristsInFront =  LWR.y < hipMid - torsoLength * 0.3   // above lower chest
+                   && RWR.y < hipMid - torsoLength * 0.3
+  const shoulderHeight = shoulderLength * 0.8;
+
+  const elbowsRaised = Math.abs(LEL.y - LSH.y) < shoulderHeight && Math.abs(REL.y - RSH.y) < shoulderHeight;
+
+  return handsTogether && elbowsRaised && wristsInFront;
+}
+
+function isLotusOpenPose(world: V3[], tolDeg:number){
+  const LSH = world[idx.L_SH], RSH = world[idx.R_SH];
+  const LEL = world[idx.L_EL], REL = world[idx.R_EL];
+  const LWR = world[idx.L_WR], RWR = world[idx.R_WR];
+  
+  if(!LSH || !RSH||!LEL||!REL||!LWR||!RWR) return false;
+
+  const a1 = angleDegToHorizontal(sub(LEL, LSH));
+  const a2 = angleDegToHorizontal(sub(REL, RSH));
+  const a3 = angleDegToHorizontal(sub(LWR, LEL));
+  const a4 = angleDegToHorizontal(sub(RWR, REL));
+
+  const thumbMCP = world[handIdx.THUMB_MCP];
+  const thumbCMC = world[handIdx.THUMB_CMC];
+  const thumbIP = world[handIdx.THUMB_IP];
+  const thumbTIP = world[handIdx.THUMB_TIP];
+
+  const pinkyDIP = world[handIdx.PINKY_DIP];
+  const pinkyMCP = world[handIdx.PINKY_MCP];
+  const pinkyPIP = world[handIdx.PINKY_PIP];
+  const pinkyTIP = world[handIdx.PINKY_TIP];
+
+
+  const laxTolDeg = tolDeg + 15;
+  
+  
+  return a1 <= laxTolDeg && a2 <= laxTolDeg && a3 <=laxTolDeg && a4 <= laxTolDeg;
+}
+
+function isTreePose(world: V3[], tolDeg: number){
+  const LSH = world[idx.L_SH], RSH = world[idx.R_SH];
+  const LEL = world[idx.L_EL], REL = world[idx.R_EL];
+  const LWR = world[idx.L_WR], RWR = world[idx.R_WR];
+  const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP];
+  const LKN = world[idx.L_KNEE], RKN = world[idx.R_KNEE];
+  const LANK = world[idx.L_ANK], RANK = world[idx.R_ANK];
+
+  if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR||!LHP||!RHP||!LKN||!RKN||!LANK||!RANK) return false; 
+
+  const shoulderLength = len(sub(RSH,LSH));
+  const feetLength = len(sub(RANK, LANK));
+
+  const a1 = angleDegToVertical(sub(LKN, LHP));
+  const a2 = angleDegToVertical(sub(LANK, LKN));
+  const a3 = angleDegToVertical(sub(RKN, RHP));
+  const a4 = angleDegToVertical(sub(RANK, RKN));
+
+  const margin = Math.abs(shoulderLength - feetLength);
+
+  const torsoStraight = a1<=tolDeg && a2 <= tolDeg && a3 <= tolDeg && a4 <=tolDeg;
+
+  const hipMid = (LHP.y + RHP.y)/2;
+  const shoulderMid = (LSH.y + RSH.y) /2;
+  const torsoLength = Math.abs(hipMid - shoulderMid);
+  const shoulderHeight = shoulderLength * 0.8;
+  const wristsInFront =  LWR.y < hipMid - torsoLength * 0.3   // above lower chest
+                   && RWR.y < hipMid - torsoLength * 0.3;
+  const elbowsRaised = Math.abs(LEL.y - LSH.y) < shoulderHeight && Math.abs(REL.y - RSH.y) < shoulderHeight;
+  const wideElbows = Math.abs(LEL.x - REL.x) > Math.abs(LWR.x - RWR.x);
+
+  return (margin < shoulderLength * 0.3) && torsoStraight && elbowsRaised && wideElbows;
 }
 
 // --- main entry: run calibration on a live <video>/<canvas> ---
@@ -204,9 +329,9 @@ export async function startCalibration(
   canvasEl: HTMLCanvasElement,
   containerEl?: HTMLElement | null,
   opts: CalibrationOptions = {},
-  poseType : 'tpose' | 'wuji' = 'tpose'
+  poseType : 'tpose' | 'wuji' | 'lotus' | 'tree'= 'tpose'
 ): Promise<CalibrationData> {
-  const lm = await ensureLandmarker(opts);
+  const [lm, handLM] = await Promise.all([ensureLandmarker(opts),ensureHandLandmarker(opts)]);
   const durationSec = opts.durationSec ?? 3;
   const tolDeg  = opts.tposeToleranceDeg ?? 15;
 
@@ -283,12 +408,100 @@ export async function startCalibration(
       }
     }
 
+  const treeJointStatus = (world: V3[]) =>{
+    const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
+    const LEL = world[idx.L_EL], REL = world[idx.R_EL]; // elbows
+    const LWR = world[idx.L_WR], RWR = world[idx.R_WR]; //wrists
+    const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP]; //hips
+    const LKN = world[idx.L_KNEE], RKN = world[idx.R_KNEE]; //knees
+    const LANK = world[idx.L_ANK], RANK = world[idx.R_ANK]; //ankles
+    
+    if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR||!LHP||!RHP||!LKN||!RKN||!LANK||!RANK){
+      return {L_SH: false, R_SH: false, L_EL: false, R_EL:false, L_WR:false, R_WR:false, L_KN: false, R_KN:false, L_AN:false, R_AN:false};
+      }
+      
+      const shoulderLength = len(sub(RSH,LSH));
+      const feetLength = len(sub(LANK, RANK));
+
+      const margin = Math.abs(shoulderLength-feetLength);
+      const hipMid = (LHP.y + RHP.y)/2;
+      const shoulderMid = (LSH.y + RSH.y) /2;
+      const torsoLength = Math.abs(hipMid - shoulderMid);
+      const shoulderHeight = shoulderLength * 0.8;
+      const wristsInFront =  LWR.y < hipMid - torsoLength * 0.3   // above lower chest
+                   && RWR.y < hipMid - torsoLength * 0.3;
+      const elbowsRaised = Math.abs(LEL.y - LSH.y) < shoulderHeight && Math.abs(REL.y - RSH.y) < shoulderHeight;
+      const wideElbows = Math.abs(LEL.x - REL.x) > Math.abs(LWR.x - RWR.x);
+
+
+      return{
+        L_SH: margin<shoulderLength*0.3,
+        R_SH: margin<shoulderLength*0.3,
+        L_AN: margin<shoulderLength*0.3,
+        R_AN: margin<shoulderLength*0.3,
+        L_EL: elbowsRaised && wideElbows,
+        R_EL:elbowsRaised && wideElbows,
+        L_WR:wristsInFront,
+        R_WR: wristsInFront
+      };
+  }
+
+  const lotusJointStatus = (world: V3[], state: string) => {
+    const LSH = world[idx.L_SH], RSH = world[idx.R_SH];
+    const LEL = world[idx.L_EL], REL = world[idx.R_EL];
+    const LWR = world[idx.L_WR], RWR=  world[idx.R_WR];
+    const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP];
+
+    if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR){
+      return {L_SH: false, R_SH: false, L_EL: false, R_EL: false, L_WR: false, R_WR: false};
+    }
+    
+    if(state === 'closedLotus'){
+      const shoulderLength = len(sub(RSH,LSH));
+      const wristLength = len(sub(LWR,RWR));
+
+      const handsTogether = wristLength < shoulderLength * 0.8;
+
+      const shoulderMid = (LSH.y + RSH.y) /2;
+      const hipMid = (LHP.y + RHP.y)/2;
+      const torsoLength = Math.abs(hipMid - shoulderMid);
+
+      const wristsInFront =LWR.y < hipMid - torsoLength * 0.3   // above lower chest
+                   && RWR.y < hipMid - torsoLength * 0.3
+      const shoulderHeight = shoulderLength * 0.8;
+
+      const elbowRaisedL = Math.abs(LEL.y - LSH.y) < shoulderHeight;
+      const elbowRaisedR = Math.abs(REL.y - RSH.y) < shoulderHeight;
+
+      
+      return{
+        L_EL: elbowRaisedL,
+        R_EL : elbowRaisedR,
+        L_WR: handsTogether && wristsInFront,
+        R_WR: handsTogether && wristsInFront,
+      };
+    } else {
+      return {
+        L_EL: angleDegToHorizontal(sub(LEL,LSH)) <= tolDeg +15,
+        L_WR: angleDegToHorizontal(sub(LWR, LEL)) <= tolDeg +15,
+        R_EL: angleDegToHorizontal(sub(REL, RSH)) <=tolDeg + 15,
+        R_WR: angleDegToHorizontal(sub(RWR, REL)) <= tolDeg + 15,
+      };
+    } 
+  };
+
+  let stateIdx = 0;
   const step = async (): Promise<CalibrationData> => {
     sizeCanvasToContainer();
+    const sequence = POSE_SEQUENCES[poseType];
 
     const res = (lm as any).detectForVideo(videoEl, performance.now());
+    const handRes = (handLM as any).detectForVideo(videoEl, performance.now());
+
     const lms2d = res?.landmarks?.[0] as any[] | undefined;        // normalized [0..1]
     const world = res?.worldLandmarks?.[0] as V3[] | undefined; // meters, pelvis-centered
+    const hands = handRes?.handedness as {categoryName: string; score: number}[][];
+
 
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
@@ -342,6 +555,23 @@ export async function startCalibration(
         drawDot(idx.R_KNEE, ok.R_KN);
         drawDot(idx.L_ANK, ok.L_AN);
         drawDot(idx.R_ANK, ok.R_AN);
+      } else if (poseType === 'lotus'){
+        const current = sequence[stateIdx].name;
+        const ok = lotusJointStatus(world, current);
+        drawDot(idx.L_WR, ok.L_WR);
+        drawDot(idx.L_EL, ok.L_EL);
+        drawDot(idx.R_WR, ok.R_WR);
+        drawDot(idx.R_EL, ok.R_EL);
+      } else if(poseType === 'tree'){
+        const ok = treeJointStatus(world);
+        drawDot(idx.L_SH, ok.L_SH);
+        drawDot(idx.R_SH, ok.R_SH);
+        drawDot(idx.L_ANK, ok.L_AN);
+        drawDot(idx.R_ANK, ok.R_AN);
+        drawDot(idx.L_EL, ok.L_EL);
+        drawDot(idx.R_EL, ok.R_EL);
+        drawDot(idx.L_WR, ok.L_WR);
+        drawDot(idx.R_WR, ok.R_WR);
       }
       
     }
@@ -350,9 +580,8 @@ export async function startCalibration(
     let poseCheck : boolean = false; 
 
     if(world && world.length > 0){
-      poseCheck = poseType === 'wuji' ? isWujiPose(world, tolDeg) : isTPose(world, tolDeg);
-      console.log('poseCheck:', poseCheck, 'stableMs:', stableMs);
-      console.log('posetype:' ,poseType);
+      const currentSeq = sequence[stateIdx];
+      poseCheck = currentSeq.check(world, tolDeg);
     }
     
     if (poseCheck) stableMs += 33; else stableMs = 0;
@@ -362,6 +591,16 @@ export async function startCalibration(
 
     // 4) On completion: compute proportions + intrinsics + Z via shoulder pinhole (as in your fixed version)
     if (stableMs >= durationSec * 1000 && world && lms2d) {
+      stableMs = 0;
+      stateIdx++;
+
+      if(stateIdx < sequence.length){
+        opts.onStateChange?.(sequence[stateIdx].name);
+        return new Promise<CalibrationData>((resolve) => {
+          requestAnimationFrame(()=>step().then(resolve));
+        });
+      }
+
       // --- proportions from RAW world (in meters) ---
       const proportions = computeProportions(world);
 
