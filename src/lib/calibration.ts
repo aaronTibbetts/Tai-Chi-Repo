@@ -1,3 +1,5 @@
+/*Calibaration work done by aaron t. did wuji, lotus and tree poses*/
+
 'use client';
 
 import { PoseLandmarker, FilesetResolver, DrawingUtils, HandLandmarker } from '@mediapipe/tasks-vision';
@@ -22,6 +24,7 @@ type PoseState = {
   check : (world: V3[], tolDeg: number) => boolean;
 };
 
+//map of pose sequences 
 const POSE_SEQUENCES: Record<string, PoseState[]> = {
   tpose: [
     {name: 'tpose', check: isTPose}
@@ -35,7 +38,13 @@ const POSE_SEQUENCES: Record<string, PoseState[]> = {
   ],
   tree:[
     {name: 'tree', check: isTreePose}
-  ] 
+  ], 
+  beginner_sequence:[ 
+    {name: 'wuji', check: isWujiPose},
+    {name: 'closedLotus', check: isLotusClosePose},
+    {name: 'openLotus', check: isLotusOpenPose},
+    {name: 'tree', check: isTreePose}
+  ]
 }
 
 const KEY = 'calibration.v1';
@@ -208,6 +217,7 @@ function isTPose(world: V3[], tolDeg: number){
   return (a1<=tolDeg && a2<=tolDeg && a3<=tolDeg && a4<=tolDeg);
 }
 
+//wuji pose check, checks if user is standing straight with arms to side 
 function isWujiPose(world: V3[], tolDeg: number){
   const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
   const LEL = world[idx.L_EL], REL = world[idx.R_EL]; //elbows
@@ -234,11 +244,12 @@ function isWujiPose(world: V3[], tolDeg: number){
        && a9<=tolDeg && a10<=tolDeg);
 }
 
+//lotus close pose check, checks if user is staight with elbows raised and their hands are together 
 function isLotusClosePose(world: V3[], tolDeg: number){
   const LSH = world[idx.L_SH], RSH = world[idx.R_SH]; //shoulders
   const LEL = world[idx.L_EL], REL = world[idx.R_EL]; //elbows
   const LWR = world[idx.L_WR], RWR = world[idx.R_WR]; //wrists 
-  const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP];
+  const LHP = world[idx.L_HIP], RHP = world[idx.R_HIP]; //hips
 
   if(!LSH||!RSH||!LEL||!REL||!LWR||!RWR) return false;
 
@@ -260,6 +271,7 @@ function isLotusClosePose(world: V3[], tolDeg: number){
   return handsTogether && elbowsRaised && wristsInFront;
 }
 
+//lotus open check, checks if user has is in a more lose tpose 
 function isLotusOpenPose(world: V3[], tolDeg:number){
   const LSH = world[idx.L_SH], RSH = world[idx.R_SH];
   const LEL = world[idx.L_EL], REL = world[idx.R_EL];
@@ -272,7 +284,9 @@ function isLotusOpenPose(world: V3[], tolDeg:number){
   const a3 = angleDegToHorizontal(sub(LWR, LEL));
   const a4 = angleDegToHorizontal(sub(RWR, REL));
 
-  const thumbMCP = world[handIdx.THUMB_MCP];
+  //tired to implement a check to see if the user's palms are pointing up to the sky,
+  // does not work yet needs to be implemented 
+ /* const thumbMCP = world[handIdx.THUMB_MCP];
   const thumbCMC = world[handIdx.THUMB_CMC];
   const thumbIP = world[handIdx.THUMB_IP];
   const thumbTIP = world[handIdx.THUMB_TIP];
@@ -282,13 +296,14 @@ function isLotusOpenPose(world: V3[], tolDeg:number){
   const pinkyPIP = world[handIdx.PINKY_PIP];
   const pinkyTIP = world[handIdx.PINKY_TIP];
 
-
+*/
   const laxTolDeg = tolDeg + 15;
   
   
   return a1 <= laxTolDeg && a2 <= laxTolDeg && a3 <=laxTolDeg && a4 <= laxTolDeg;
 }
 
+//tree pose check, checks if the use is standing with feet shoulder width apart and arms bent in a 'hugginh' position
 function isTreePose(world: V3[], tolDeg: number){
   const LSH = world[idx.L_SH], RSH = world[idx.R_SH];
   const LEL = world[idx.L_EL], REL = world[idx.R_EL];
@@ -329,7 +344,7 @@ export async function startCalibration(
   canvasEl: HTMLCanvasElement,
   containerEl?: HTMLElement | null,
   opts: CalibrationOptions = {},
-  poseType : 'tpose' | 'wuji' | 'lotus' | 'tree'= 'tpose'
+  poseType : 'tpose' | 'wuji' | 'lotus' | 'tree' | 'beginner_sequence'= 'tpose'
 ): Promise<CalibrationData> {
   const [lm, handLM] = await Promise.all([ensureLandmarker(opts),ensureHandLandmarker(opts)]);
   const durationSec = opts.durationSec ?? 3;
@@ -576,7 +591,7 @@ export async function startCalibration(
       
     }
 
-    // 3) Countdown gate (keep your existing isTPose if you prefer)
+    // 3) Countdown gate 
     let poseCheck : boolean = false; 
 
     if(world && world.length > 0){
