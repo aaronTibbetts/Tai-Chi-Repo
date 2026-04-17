@@ -50,7 +50,7 @@ export default function WujiPage() {
         Press Start, then hold the pose until the countdown reaches zero.
       </p>
 
-      {/* Camera  */}
+      {/* Camera + overlay */}
       <div
         ref={containerRef}
         style={{ position: 'relative', width: 640, height: 480 }}
@@ -70,7 +70,7 @@ export default function WujiPage() {
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         />
 
-        {/* Countdown */}
+        {/* Countdown overlay */}
         {status === 'calibrating' && countdown !== null && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white text-6xl font-bold drop-shadow-lg">
@@ -83,7 +83,7 @@ export default function WujiPage() {
         {status === 'success' && (
           <div className="absolute inset-0 flex items-center justify-center bg-green-500/40">
             <span className="text-white text-4xl font-bold drop-shadow-lg">
-                Pose Correct!
+              ✓ Pose Correct!
             </span>
           </div>
         )}
@@ -97,7 +97,7 @@ export default function WujiPage() {
       )}
       {status === 'success' && (
         <p className="text-green-600 font-medium">
-          Calibration complete! 
+          Calibration complete! Great Wuji pose.
         </p>
       )}
 

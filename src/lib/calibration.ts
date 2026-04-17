@@ -3,6 +3,7 @@
 'use client';
 
 import { PoseLandmarker, FilesetResolver, DrawingUtils, HandLandmarker } from '@mediapipe/tasks-vision';
+import { boolean } from 'zod';
 
 export type CalibrationData = {
   proportions: Record<string, number>;
@@ -587,6 +588,54 @@ export async function startCalibration(
         drawDot(idx.R_EL, ok.R_EL);
         drawDot(idx.L_WR, ok.L_WR);
         drawDot(idx.R_WR, ok.R_WR);
+      } else if (poseType === 'beginner_sequence'){
+        const currentSeq = sequence[stateIdx];
+        switch (currentSeq.name){
+          case 'wuji':{
+            const ok = wujiJointStatus(world);
+            drawDot(idx.L_EL, ok.L_EL);
+            drawDot(idx.L_WR, ok.L_WR);
+            drawDot(idx.R_EL, ok.R_EL);
+            drawDot(idx.R_WR, ok.R_WR);
+            drawDot(idx.L_SH, ok.L_SH);
+            drawDot(idx.R_SH, ok.R_SH);
+            drawDot(idx.L_KNEE, ok.L_KN);
+            drawDot(idx.R_KNEE, ok.R_KN);
+            drawDot(idx.L_ANK, ok.L_AN);
+            drawDot(idx.R_ANK, ok.R_AN);
+            break;
+          }
+          case 'closedLotus':{
+            const current = sequence[stateIdx].name;
+            const ok = lotusJointStatus(world, current);
+            drawDot(idx.L_WR, ok.L_WR);
+            drawDot(idx.L_EL, ok.L_EL);
+            drawDot(idx.R_WR, ok.R_WR);
+            drawDot(idx.R_EL, ok.R_EL);
+            break;
+          }
+          case 'openLotus':{
+            const current = sequence[stateIdx].name;
+            const ok = lotusJointStatus(world, current);
+            drawDot(idx.L_WR, ok.L_WR);
+            drawDot(idx.L_EL, ok.L_EL);
+            drawDot(idx.R_WR, ok.R_WR);
+            drawDot(idx.R_EL, ok.R_EL);
+            break;
+          }
+          case 'tree':{ 
+            const ok = treeJointStatus(world);
+            drawDot(idx.L_SH, ok.L_SH);
+            drawDot(idx.R_SH, ok.R_SH);
+            drawDot(idx.L_ANK, ok.L_AN);
+            drawDot(idx.R_ANK, ok.R_AN);
+            drawDot(idx.L_EL, ok.L_EL);
+            drawDot(idx.R_EL, ok.R_EL);
+            drawDot(idx.L_WR, ok.L_WR);
+            drawDot(idx.R_WR, ok.R_WR);
+            break;
+          }
+        }
       }
       
     }
