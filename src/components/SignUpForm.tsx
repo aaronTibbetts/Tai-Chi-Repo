@@ -1,13 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function SignUpForm() {
+  const router = useRouter();
+  const { signup } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,14 +31,12 @@ export default function SignUpForm() {
 
     try {
       setIsSubmitting(true);
-
-      // Placeholder async state to show loading behavior until backend auth is connected.
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      setMessage('You are signed up and ready to begin your wellness journey.');
-      setFullName('');
-      setEmail('');
-      setPassword('');
+      await signup(fullName.trim(), email.trim(), password);
+      setMessage('Account created. Redirecting to onboarding...');
+      router.push('/onboarding');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to create account.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +86,7 @@ export default function SignUpForm() {
                 name="password"
                 type="password"
                 autoComplete="new-password"
-                placeholder="Create a secure password"
+                placeholder="At least 10 chars, mixed case, 1 number"
                 value={password}
                 onChange={event => setPassword(event.target.value)}
               />

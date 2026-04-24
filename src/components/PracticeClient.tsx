@@ -44,6 +44,11 @@ import {
 } from '@/lib/pose-estimation';
 import { extractAndRetargetFromVideo } from '@/lib/expert-retarget';
 import { getCalibration } from '@/lib/calibration';
+import {
+  addPoseAttempt,
+  completePracticeSession,
+  createPracticeSession,
+} from '@/lib/auth-api';
 
 type LandmarkFrame = {
   landmarks: NormalizedLandmark[];
@@ -343,6 +348,7 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
   const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const practiceSessionIdRef = useRef<string | null>(null);
 
   const currentPose = sequence.poses[currentPoseIndex];
   const totalDuration = sequence.poses.reduce((sum, p) => sum + p.duration, 0);
@@ -534,6 +540,21 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
         );
         
         setPoseFeedbackLog(prev => [...prev, aiResult]);
+
+        if ('aiFeedback' in aiResult && practiceSessionIdRef.current) {
+          const frameStart = analysisData.data[0]?.timestamp ?? 0;
+          const frameEnd = analysisData.data[analysisData.data.length - 1]?.timestamp ?? frameStart;
+          const latencyMs = Math.max(0, Math.round(frameEnd - frameStart));
+          const poseErrors = aiResult.translationDetails.errorDescriptions ?? [];
+          void addPoseAttempt(practiceSessionIdRef.current, {
+            poseIndex: currentPoseIndex,
+            expectedPoseName: analysisData.poseName,
+            detectedPoseName: aiResult.translationDetails.gestureName || analysisResult.feedbacks[0]?.poseName || '',
+            errorDescriptions: poseErrors,
+            confidence: poseErrors.length === 0 ? 0.95 : 0.8,
+            latencyMs,
+          });
+        }
       }
     } catch (e) {
       const error = e instanceof Error ? e : new Error("Unknown error during analysis");
@@ -542,7 +563,7 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
     } finally {
       setIsFetchingFeedback(false);
     }
-  }, [toast]);
+  }, [toast, currentPoseIndex]);
 
   const togglePlayPause = () => {
     if (
@@ -660,7 +681,20 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
   
     // 7) bump nonce to force extract effect to run again even on pose 0
     setRestartNonce(n => n + 1);
+    practiceSessionIdRef.current = null;
   }, [sequence.poses]);
+
+  useEffect(() => {
+    if (!isPlaying || practiceSessionIdRef.current) return;
+    void (async () => {
+      try {
+        const id = await createPracticeSession(String(sequence.id));
+        practiceSessionIdRef.current = id;
+      } catch {
+        // Session persistence is best-effort; coaching can still run without it.
+      }
+    })();
+  }, [isPlaying, sequence.id]);
 
   const handleVideoLoaded = () => {
     if (videoRef.current) {
@@ -869,12 +903,21 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
                 .map(f => ('aiFeedback' in f ? f.aiFeedback.explanation : f.error))
                 .filter((item): item is string => !!item);
               
-              const summaryResult = await getFinalSummaryAction(feedbackItems);
-
-              if ('error' in summaryResult) {
-                  toast({ variant: 'destructive', title: 'Summary Failed', description: summaryResult.error });
+              if (practiceSessionIdRef.current) {
+                try {
+                  const completed = await completePracticeSession(practiceSessionIdRef.current, feedbackItems);
+                  setFinalSummary({ text: completed.summaryText, speech: completed.summarySpeech });
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Unable to complete practice session.';
+                  toast({ variant: 'destructive', title: 'Summary Failed', description: message });
+                }
               } else {
-                  setFinalSummary({ text: summaryResult.summaryText, speech: summaryResult.summarySpeech });
+                const summaryResult = await getFinalSummaryAction(feedbackItems);
+                if ('error' in summaryResult) {
+                    toast({ variant: 'destructive', title: 'Summary Failed', description: summaryResult.error });
+                } else {
+                    setFinalSummary({ text: summaryResult.summaryText, speech: summaryResult.summarySpeech });
+                }
               }
               setIsFetchingSummary(false);
           };

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -16,18 +16,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { AUTH_STORAGE_KEYS, readOnboardingComplete } from '@/lib/auth-storage';
+import { readOnboardingComplete } from '@/lib/auth-storage';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuthenticated } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -35,16 +35,10 @@ export default function LoginPage() {
     try {
       if (!email.trim() || password.length < 1) {
         setError('Please enter your email and password.');
-        setIsLoading(false);
         return;
       }
 
-      setAuthenticated(true);
-      try {
-        localStorage.setItem(AUTH_STORAGE_KEYS.userEmail, email.trim());
-      } catch {
-        /* ignore */
-      }
+      await login(email.trim(), password);
 
       if (rememberMe) {
         try {
@@ -56,11 +50,12 @@ export default function LoginPage() {
 
       const done = readOnboardingComplete();
       router.push(done ? '/dashboard' : '/onboarding');
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -69,7 +64,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-center text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription className="text-center">
-            Sign in to continue your Tai Chi practice (demo — no server verification).
+            Sign in to continue your Tai Chi practice.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -92,7 +87,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter any value for demo"
+                placeholder="Enter your account password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -115,7 +110,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="text-sm text-primary hover:underline"
-                onClick={() => alert('Password reset is not wired up in this demo.')}
+                onClick={() => alert('Use the password reset endpoint in the backend API for now.')}
               >
                 Forgot password?
               </button>
@@ -128,7 +123,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in…' : 'Sign in'}
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}

@@ -24,7 +24,7 @@ import {
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -49,6 +49,11 @@ export function Header() {
             </Tooltip>
           </div>
           <div className="flex flex-1 items-center justify-end space-x-4">
+            {isAuthenticated ? (
+              <div className="hidden rounded-md border bg-background/80 px-3 py-1 text-sm font-medium sm:block">
+                {user?.displayName || user?.email || 'Practitioner'}
+              </div>
+            ) : null}
             <nav className="flex items-center space-x-1">
               <Tooltip>
                 <TooltipTrigger asChild>
