@@ -12,13 +12,21 @@ import { SignUpFooterLogin } from '@/components/SignUpFooterLogin';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
     setOk(isCalibrated());
     return onCalibrationUpdated(c => setOk(!!c));
   }, []);
+
+  if (isLoading) {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center p-6 text-muted-foreground">
+        Loading...
+      </main>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

@@ -20,7 +20,8 @@ Next.js frontend + Flask backend for Tai Chi pose analysis, AI feedback, and ima
 
 ### Root `.env` (Next.js)
 
-- `FLASK_API_BASE_URL=http://127.0.0.1:5001`
+- `FLASK_API_BASE_URL=http://localhost:5001`
+- `NEXT_PUBLIC_FLASK_API_BASE_URL=http://localhost:5001`
 
 ### `backend/.env` (Flask)
 
@@ -33,6 +34,14 @@ Next.js frontend + Flask backend for Tai Chi pose analysis, AI feedback, and ima
 - `GEMINI_IMAGE_MODEL=gemini-2.5-flash-image`
 - `ELEVENLABS_API_KEY=...`
 - `ELEVENLABS_VOICE_ID=...`
+- `DATASTORE_BACKEND=memory` (or `snowflake`)
+- Snowflake settings when using Snowflake:
+  - `SNOWFLAKE_ACCOUNT=...`
+  - `SNOWFLAKE_USER=...`
+  - `SNOWFLAKE_PASSWORD=...`
+  - `SNOWFLAKE_WAREHOUSE=...`
+  - `SNOWFLAKE_DATABASE=...`
+  - `SNOWFLAKE_SCHEMA=APP_CORE`
 
 ## Run
 
@@ -51,7 +60,16 @@ npm run dev
 App URLs:
 
 - Frontend: `http://localhost:9002`
-- Backend health: `http://127.0.0.1:5001/api/v1/health`
+- Backend health: `http://localhost:5001/api/v1/health`
+- Backend v2 health (shows active datastore): `http://localhost:5001/api/v2/health`
+
+## Snowflake Setup
+
+Run the bootstrap SQL from:
+
+- `backend/sql/snowflake_schema.sql`
+
+Then set `DATASTORE_BACKEND=snowflake` in `backend/.env` and restart the backend.
 
 ## Backend API
 

@@ -11,11 +11,14 @@ import type { OnboardingFormData } from '@/types/onboarding';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { readOnboardingComplete, setOnboardingComplete } from '@/lib/auth-storage';
+import { saveOnboarding } from '@/lib/auth-api';
 
 function OnboardingInner() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [hydrated, setHydrated] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [formData, setFormData] = useState<OnboardingFormData>({
     answers: {},
     currentStep: 1,
@@ -27,7 +30,7 @@ function OnboardingInner() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || isLoading) return;
     if (!isAuthenticated) {
       router.replace('/login');
       return;
@@ -35,7 +38,7 @@ function OnboardingInner() {
     if (readOnboardingComplete()) {
       router.replace('/dashboard');
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, isLoading, router]);
 
   const totalSteps = onboardingQuestions.length;
   const currentQuestion = onboardingQuestions[formData.currentStep - 1];
@@ -73,11 +76,22 @@ function OnboardingInner() {
     }));
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    setSaveError('');
+    setIsSaving(true);
     try {
       localStorage.setItem('taiChiOnboardingAnswers', JSON.stringify(formData.answers));
     } catch {
       /* ignore */
+    }
+    try {
+      await saveOnboarding(formData.answers as Record<string, unknown>);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to save onboarding. Please try again.';
+      setSaveError(message);
+      return;
+    } finally {
+      setIsSaving(false);
     }
     setOnboardingComplete(true);
     setFormData((prev) => ({ ...prev, isComplete: true }));
@@ -93,7 +107,7 @@ function OnboardingInner() {
         currentStep: prev.currentStep + 1,
       }));
     } else {
-      handleComplete();
+      void handleComplete();
     }
   };
 
@@ -105,7 +119,7 @@ function OnboardingInner() {
     }));
   };
 
-  if (!hydrated || !isAuthenticated || readOnboardingComplete()) {
+  if (!hydrated || isLoading || !isAuthenticated || readOnboardingComplete()) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-8 text-muted-foreground">
         Loading…
@@ -140,7 +154,7 @@ function OnboardingInner() {
                   type="button"
                   variant="outline"
                   onClick={handleBack}
-                  disabled={formData.currentStep === 1}
+                  disabled={formData.currentStep === 1 || isSaving}
                   className="gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -153,11 +167,16 @@ function OnboardingInner() {
                   <span>{totalSteps}</span>
                 </div>
 
-                <Button type="button" onClick={handleNext} disabled={!isStepValid()} className="gap-2">
-                  {formData.currentStep === totalSteps ? 'Complete' : 'Next'}
+                <Button type="button" onClick={handleNext} disabled={!isStepValid() || isSaving} className="gap-2">
+                  {formData.currentStep === totalSteps ? (isSaving ? 'Saving...' : 'Complete') : 'Next'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
+              {saveError ? (
+                <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  {saveError}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </div>
