@@ -10,6 +10,7 @@ import {
   LogIn,
   LayoutDashboard,
   LogOut,
+  BookOpen,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,16 @@ export function Header() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">CSV test</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Pose glossary" asChild>
+                    <Link href="/glossary">
+                      <BookOpen className="h-5 w-5" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Pose glossary</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>

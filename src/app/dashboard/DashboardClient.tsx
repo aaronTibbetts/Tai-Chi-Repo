@@ -63,6 +63,9 @@ export default function DashboardClient({ userEmail }: DashboardClientProps) {
               <Link href="/">Home</Link>
             </Button>
             <Button variant="outline" asChild>
+              <Link href="/glossary">Pose Glossary</Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link href="/calibrate">Calibrate</Link>
             </Button>
             <Button variant="outline" onClick={handleLogout}>
