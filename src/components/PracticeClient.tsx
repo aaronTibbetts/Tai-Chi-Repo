@@ -23,6 +23,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { type Sequence } from '@/lib/sequences';
+import { recordPosePractice } from '@/lib/practice-progress';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getPoseAnalysisFromCsv, getAiFeedbackForAnalysis, getFinalSummaryAction, type AiFeedbackResult } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -377,6 +378,7 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
 
   // Restart nonce
   const [restartNonce, setRestartNonce] = useState(0);
+  const lastRecordedPoseRef = useRef<string | null>(null);
 
   // Gesture play/pause State
   const holdCounterRef = useRef(0);
@@ -627,6 +629,7 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
   };
 
   const restartSequence = useCallback(() => {
+    lastRecordedPoseRef.current = null;
     // 1) reset completion/playback
     setIsSequenceComplete(false);
     setIsPlaying(false);
@@ -905,6 +908,17 @@ export default function PracticeClient({ sequence }: { sequence: Sequence | unde
 
   useInterval(() => {
     if (timeRemainingInPose <= 1) {
+      const recordKey = `${sequence.id}:${currentPoseIndex}`;
+      if (lastRecordedPoseRef.current !== recordKey) {
+        lastRecordedPoseRef.current = recordKey;
+        recordPosePractice({
+          poseName: currentPose.name,
+          sequenceId: sequence.id,
+          sequenceName: sequence.name,
+          durationSec: currentPose.duration,
+        });
+      }
+
       // Trigger analysis for the completed pose
       setAnalysisTrigger({ data: landmarkDataLog, poseName: currentPose.name });
       setLandmarkDataLog([]);

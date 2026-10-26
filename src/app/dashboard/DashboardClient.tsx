@@ -15,6 +15,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { sequences } from '@/lib/sequences';
+import { PracticeProgressCard } from '@/components/PracticeProgressCard';
 
 type DashboardClientProps = {
   userEmail: string | null;
@@ -94,6 +95,8 @@ export default function DashboardClient({ userEmail }: DashboardClientProps) {
             </div>
           </div>
         </Card>
+
+        <PracticeProgressCard />
 
         <Tabs defaultValue="week" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
