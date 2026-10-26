@@ -15,7 +15,27 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { sequences } from '@/lib/sequences';
+import { poseGlossary, type PoseGlossaryEntry } from '@/lib/pose-glossary';
 import { PracticeProgressCard } from '@/components/PracticeProgressCard';
+import { Badge } from '@/components/ui/badge';
+
+const practicePoses = poseGlossary.filter((entry) => entry.kind === 'Pose');
+
+function poseForDate(date: Date): PoseGlossaryEntry {
+  const key = format(date, 'yyyy-MM-dd');
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return practicePoses[(hash >>> 0) % practicePoses.length];
+}
+
+function difficultyVariant(difficulty: PoseGlossaryEntry['difficulty']) {
+  if (difficulty === 'Beginner') return 'secondary' as const;
+  if (difficulty === 'Intermediate') return 'default' as const;
+  return 'outline' as const;
+}
 
 type DashboardClientProps = {
   userEmail: string | null;
@@ -47,7 +67,7 @@ export default function DashboardClient({ userEmail }: DashboardClientProps) {
     };
   };
 
-  const selectedPlan = dayPlan(selectedDate);
+  const dayPose = poseForDate(selectedDate);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background pb-10 pt-6">
@@ -134,17 +154,24 @@ export default function DashboardClient({ userEmail }: DashboardClientProps) {
             <Card>
               <CardHeader>
                 <CardTitle>{format(selectedDate, 'EEEE, MMMM d')}</CardTitle>
-                <CardDescription>{selectedPlan.detail}</CardDescription>
+                <CardDescription>Your pose to practice this day.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link href="/">Open sequences</Link>
-                </Button>
-                {!selectedPlan.isRest ? (
-                  <Button variant="secondary" asChild>
-                    <Link href="/calibrate">Check calibration</Link>
-                  </Button>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-2xl font-semibold tracking-tight">{dayPose.name}</h3>
+                  <Badge variant={difficultyVariant(dayPose.difficulty)}>{dayPose.difficulty}</Badge>
+                </div>
+                {dayPose.alsoKnownAs ? (
+                  <p className="text-sm text-muted-foreground">{dayPose.alsoKnownAs}</p>
                 ) : null}
+                <p className="max-w-2xl text-sm leading-relaxed">{dayPose.description}</p>
+                <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {dayPose.instructions}
+                </p>
+                <p className="text-sm text-muted-foreground">{dayPose.durationSec} seconds</p>
+                <Button asChild>
+                  <Link href={dayPose.href}>Practice this pose</Link>
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
